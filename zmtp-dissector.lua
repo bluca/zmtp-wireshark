@@ -86,6 +86,10 @@ fds.cmd_ping_ttl = ProtoField.new("Time To Live (deciseconds)", "zmtp.command.pi
 fds.cmd_ping_context = ProtoField.new("Context", "zmtp.command.ping.context", ftypes.STRING)
 fds.cmd_pong = ProtoField.new("PONG Command", "zmtp.command.pong", ftypes.BYTES)
 fds.cmd_pong_context = ProtoField.new("Context", "zmtp.command.pong.context", ftypes.STRING)
+fds.cmd_subscribe = ProtoField.new("SUBSCRIBE Command", "zmtp.command.subscribe", ftypes.BYTES)
+fds.cmd_subscribe_topic = ProtoField.new("Topic", "zmtp.command.subscribe.topic", ftypes.STRING)
+fds.cmd_cancel = ProtoField.new("CANCEL Command", "zmtp.command.cancel", ftypes.BYTES)
+fds.cmd_cancel_topic = ProtoField.new("Topic", "zmtp.command.cancel.topic", ftypes.STRING)
 
 local tcp_stream_id = Field.new("tcp.stream")
 local subdissectors = DissectorTable.new("zmtp.protocol", "ZMTP", ftypes.STRING)
@@ -393,6 +397,24 @@ local function zmq_dissect_frame(buffer, pinfo, frame_tree, tap, toplevel_tree)
                                                                pong_context)
                                     frame_tree:set_text(format("Command PONG%s: Context: %s",
                                                     has_more, pong_context))
+                        end
+                elseif cmd_name == "SUBSCRIBE" then
+                        if cmd_data_rang then
+                                local subscribe_tree = frame_tree:add(fds.cmd_subscribe, cmd_data_rang)
+                                local subscribe_topic = cmd_data_rang:range(0, cmd_data_rang:len())
+                                local topic_tree = subscribe_tree:add(fds.cmd_subscribe_topic,
+                                                               subscribe_topic)
+                                frame_tree:set_text(format("Command SUBSCRIBE%s: Topic: %s",
+                                                    has_more, subscribe_topic))
+                        end
+                elseif cmd_name == "CANCEL" then
+                        if cmd_data_rang then
+                                local cancel_tree = frame_tree:add(fds.cmd_cancel, cmd_data_rang)
+                                local cancel_topic = cmd_data_rang:range(0, cmd_data_rang:len())
+                                local topic_tree = cancel_tree:add(fds.cmd_cancel_topic,
+                                                               cancel_topic)
+                                frame_tree:set_text(format("Command CANCEL%s: Topic: %s",
+                                                    has_more, cancel_topic))
                         end
                 else
                         if cmd_data_rang then
